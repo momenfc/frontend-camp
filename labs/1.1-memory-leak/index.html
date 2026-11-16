@@ -51,6 +51,9 @@ const renderCache = new Map();
 
 let current = null;
 let openedCount = 0;
+const time = () => {
+      clock.textContent = new Date().toLocaleTimeString();
+    }
 
 class NotesPanel {
   constructor(id) {
@@ -88,15 +91,14 @@ class NotesPanel {
     onResize();
     window.addEventListener('resize', onResize);
 
-    setInterval(() => {
-      clock.textContent = new Date().toLocaleTimeString();
-    }, 1000);
+    setInterval(time, 1000);
 
     openedPanels++;
   }
 
   unmount() {
     this.el.remove();
+    clearInterval(time)
   }
 }
 
