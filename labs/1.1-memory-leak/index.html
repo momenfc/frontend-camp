@@ -85,11 +85,11 @@ class NotesPanel {
     const sizeLabel = this.el.querySelector('.size');
     const clock = this.el.querySelector('.clock');
 
-    const onResize = () => {
+    this.onResize = () => {
       sizeLabel.textContent = `${window.innerWidth}px wide, ${this.notes.length} notes`;
     };
-    onResize();
-    window.addEventListener('resize', onResize);
+    this.onResize();
+    window.addEventListener('resize', this.onResize);
 
     setInterval(time, 1000);
 
@@ -99,6 +99,8 @@ class NotesPanel {
   unmount() {
     this.el.remove();
     clearInterval(time)
+        window.removeEventListener('resize', this.onResize);
+
   }
 }
 
