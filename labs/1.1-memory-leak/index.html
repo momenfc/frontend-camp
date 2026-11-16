@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lab 1.1: Leaky Notes</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 24px; background: #f4f5f7; color: #1b1f2a; }
+  header { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; }
+  button { font: inherit; padding: 8px 14px; border-radius: 8px; border: 1px solid #c8ccd4; background: #fff; cursor: pointer; }
+  #stage { min-height: 320px; }
+  .panel { background: #fff; border: 1px solid #d6d9df; border-radius: 12px; padding: 16px; }
+  .panel h2 { margin: 0 0 8px; font-size: 18px; }
+  .panel ul { max-height: 240px; overflow: auto; margin: 0; padding-left: 20px; }
+  .meta { color: #5b6272; font-size: 13px; margin-bottom: 8px; }
+  #log { font-family: ui-monospace, monospace; font-size: 12px; color: #5b6272; }
+</style>
+</head>
+<body>
+<header>
+  <button id="toggle" type="button">Open panel</button>
+  <button id="cycle" type="button">Open + close x7</button>
+  <span id="log">opened: 0</span>
+</header>
+<div id="stage"></div>
+
+<script>
+/*
+  Lab 1.1 — Leaky Notes
+  -------------------------------------------------------------
+  Each "panel" shows 20,000 notes. Opening and closing the panel
+  should leave memory where it started. It does not.
+
+  Your job (see README.md):
+    1. Prove the leak with the Performance panel (Memory checkbox).
+    2. Find every leak with the 3-snapshot technique + Retainers.
+    3. Fix them by hand, one at a time, and record the numbers.
+
+  Rules: do not rewrite the app. Keep the features (resize label,
+  live clock, "recent panels" count, render cache) working.
+*/
+
+const stage = document.getElementById('stage');
+const log = document.getElementById('log');
+
+// "Recently opened panels" — used for the counter in the header.
+const openedPanels = [];
+
+// Render cache: avoids rebuilding the notes HTML.
+const renderCache = new Map();
+
+let current = null;
+let openedCount = 0;
+
+class NotesPanel {
+  constructor(id) {
+    this.id = id;
+    this.notes = Array.from({ length: 20000 }, (_, i) => ({
+      id: i,
+      title: `Note ${i} of panel ${id}`,
+      body: 'Lorem ipsum dolor sit amet '.repeat(3),
+      tags: ['work', 'camp', `p${id}`],
+    }));
+    this.el = document.createElement('section');
+    this.el.className = 'panel';
+  }
+
+  mount(parent) {
+    const key = `panel-${this.id}-${Date.now()}`;
+    let html = renderCache.get(key);
+    if (!html) {
+      html = this.notes.slice(0, 500).map(n => `<li>${n.title}</li>`).join('');
+      renderCache.set(key, { html, notes: this.notes });
+    }
+
+    this.el.innerHTML = `
+      <h2>Panel #${this.id}</h2>
+      <div class="meta"><span class="size"></span> · <span class="clock"></span></div>
+      <ul>${typeof html === 'string' ? html : html.html}</ul>`;
+    parent.appendChild(this.el);
+
+    const sizeLabel = this.el.querySelector('.size');
+    const clock = this.el.querySelector('.clock');
+
+    const onResize = () => {
+      sizeLabel.textContent = `${window.innerWidth}px wide, ${this.notes.length} notes`;
+    };
+    onResize();
+    window.addEventListener('resize', onResize);
+
+    setInterval(() => {
+      clock.textContent = new Date().toLocaleTimeString();
+    }, 1000);
+
+    openedPanels.push(this.el);
+  }
+
+  unmount() {
+    this.el.remove();
+  }
+}
+
+function open() {
+  openedCount += 1;
+  current = new NotesPanel(openedCount);
+  current.mount(stage);
+  document.getElementById('toggle').textContent = 'Close panel';
+  log.textContent = `opened: ${openedCount} · recent: ${openedPanels.length}`;
+}
+
+function close() {
+  current.unmount();
+  current = null;
+  document.getElementById('toggle').textContent = 'Open panel';
+}
+
+document.getElementById('toggle').addEventListener('click', () => {
+  current ? close() : open();
+});
+
+document.getElementById('cycle').addEventListener('click', () => {
+  if (current) close();
+  for (let i = 0; i < 7; i++) { open(); close(); }
+});
+</script>
+</body>
+</html>
