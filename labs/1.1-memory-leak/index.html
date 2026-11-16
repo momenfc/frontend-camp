@@ -44,7 +44,7 @@ const stage = document.getElementById('stage');
 const log = document.getElementById('log');
 
 // "Recently opened panels" — used for the counter in the header.
-const openedPanels = [];
+let openedPanels = 0;
 
 // Render cache: avoids rebuilding the notes HTML.
 const renderCache = new Map();
@@ -92,7 +92,7 @@ class NotesPanel {
       clock.textContent = new Date().toLocaleTimeString();
     }, 1000);
 
-    openedPanels.push(this.el);
+    openedPanels++;
   }
 
   unmount() {
@@ -105,7 +105,7 @@ function open() {
   current = new NotesPanel(openedCount);
   current.mount(stage);
   document.getElementById('toggle').textContent = 'Close panel';
-  log.textContent = `opened: ${openedCount} · recent: ${openedPanels.length}`;
+  log.textContent = `opened: ${openedCount} · recent: ${openedPanels}`;
 }
 
 function close() {
