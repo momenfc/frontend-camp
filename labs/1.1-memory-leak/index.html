@@ -51,9 +51,9 @@ const renderCache = new Map();
 
 let current = null;
 let openedCount = 0;
-const time = () => {
-      clock.textContent = new Date().toLocaleTimeString();
-    }
+// const time = () => {
+//       clock.textContent = new Date().toLocaleTimeString();
+//     }
 
 class NotesPanel {
   constructor(id) {
@@ -69,17 +69,21 @@ class NotesPanel {
   }
 
   mount(parent) {
-    const key = `panel-${this.id}-${Date.now()}`;
+    const key = `panel-${this.id}`;
     let html = renderCache.get(key);
     if (!html) {
       html = this.notes.slice(0, 500).map(n => `<li>${n.title}</li>`).join('');
-      renderCache.set(key, { html, notes: this.notes });
+      renderCache.set(key, html);
+      if( renderCache.size > 5 ){
+        const keyToDel = renderCache.keys().next().value
+        renderCache.delete(keyToDel)
+      }
     }
 
     this.el.innerHTML = `
       <h2>Panel #${this.id}</h2>
       <div class="meta"><span class="size"></span> · <span class="clock"></span></div>
-      <ul>${typeof html === 'string' ? html : html.html}</ul>`;
+      <ul>${typeof html === 'string' ? html : html}</ul>`;
     parent.appendChild(this.el);
 
     const sizeLabel = this.el.querySelector('.size');
@@ -91,14 +95,14 @@ class NotesPanel {
     this.onResize();
     window.addEventListener('resize', this.onResize);
 
-    setInterval(time, 1000);
+    this.intervalId = setInterval(() => {clock.textContent = new Date().toLocaleTimeString()}, 1000);
 
     openedPanels++;
   }
 
   unmount() {
     this.el.remove();
-    clearInterval(time)
+    clearInterval(this.intervalId)
         window.removeEventListener('resize', this.onResize);
 
   }
